@@ -1,7 +1,13 @@
 {
   "name": "shms",
   "compatibility_date": "2026-06-24",
+  "compatibility_flags": ["global_fetch_strictly_public", "nodejs_compat"],
+  "main": "dist/_worker.js/index.js",
   "assets": {
-    "directory": "./dist"
+    "binding": "ASSETS",
+    "directory": "dist"
+  },
+  "observability": {
+    "enabled": true
   }
 }
