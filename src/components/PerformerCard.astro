@@ -1,0 +1,187 @@
+---
+import { Image } from 'astro:assets';
+import type { CollectionEntry } from 'astro:content';
+import { getPerformerImages, nameFromId } from '../lib/performerImages';
+
+interface Props { entry: CollectionEntry<'performers'>; }
+const { entry } = Astro.props;
+const { city, role, phone, tiktok, facebook, instagram, x, description, tags, featured } = entry.data;
+const name = entry.data.name ?? nameFromId(entry.id);
+const images = getPerformerImages(entry.id);
+
+const socials = [
+  { key: 'instagram', url: instagram, label: 'Instagram' },
+  { key: 'tiktok', url: tiktok, label: 'TikTok' },
+  { key: 'facebook', url: facebook, label: 'Facebook' },
+  { key: 'x', url: x, label: 'X' },
+].filter((s) => s.url);
+---
+<article class="card" data-city={city} data-tags={tags.join('|')} data-featured={featured ? 'true' : 'false'}>
+  <a class="card-link" href={`/performer/${entry.id}`} aria-label={`View ${name}'s full profile`}></a>
+  <div class="gallery" data-count={images.length}>
+    <div class="gallery-main">
+      {featured && <span class="featured-badge">★ Featured</span>}
+      {images.length === 0 && (
+        <div class="no-photo">No photo yet</div>
+      )}
+      {images.map((img, i) => (
+        <Image
+          src={img}
+          alt={`${name} — photo ${i + 1}`}
+          width={520}
+          height={650}
+          class={i === 0 ? 'shot is-active' : 'shot'}
+          data-index={i}
+          loading={i === 0 ? 'eager' : 'lazy'}
+        />
+      ))}
+      {images.length > 1 && (
+        <span class="photo-count">1 / {images.length}</span>
+      )}
+    </div>
+
+    {images.length > 1 && (
+      <div class="thumbs">
+        {images.map((img, i) => (
+          <button
+            class={i === 0 ? 'thumb is-active' : 'thumb'}
+            data-target={i}
+            aria-label={`View photo ${i + 1}`}
+            type="button"
+          >
+            <Image src={img} alt="" width={72} height={72} />
+          </button>
+        ))}
+      </div>
+    )}
+  </div>
+
+  <div class="card-body">
+    <div class="meta">
+      <h3 class="name">{name}</h3>
+      <span class="city">{city}</span>
+    </div>
+    <p class="role">{role}</p>
+
+
+<p class="role">{role}</p>
+    {description && <p class="desc">{description}</p>}
+    {tags.length > 0 && (
+      <ul class="tags">
+        {tags.map((t) => <li class="tag">{t}</li>)}
+      </ul>
+    )}
+
+
+    <div class="card-actions">
+      <button class="reveal-btn" type="button" data-phone={phone}>
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M6.6 10.8a15.5 15.5 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.46.57 3.6a1 1 0 0 1-.25 1l-2.2 2.2Z"/></svg>
+        <span class="reveal-label">Show number</span>
+      </button>
+
+      {socials.length > 0 && (
+        <div class="socials">
+          {socials.map((s) => (
+            <a href={s.url} target="_blank" rel="noopener noreferrer" class={`soc soc--${s.key}`} aria-label={s.label}>
+              {s.key === 'instagram' && <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M12 2.2c3.2 0 3.6 0 4.85.07 1.17.05 1.8.25 2.23.41.56.22.96.48 1.38.9.42.42.68.82.9 1.38.16.42.36 1.06.41 2.23.06 1.26.07 1.64.07 4.81s0 3.55-.07 4.81c-.05 1.17-.25 1.8-.41 2.23-.22.56-.48.96-.9 1.38-.42.42-.82.68-1.38.9-.42.16-1.06.36-2.23.41-1.26.06-1.64.07-4.85.07s-3.59 0-4.85-.07c-1.17-.05-1.8-.25-2.23-.41a3.7 3.7 0 0 1-1.38-.9 3.7 3.7 0 0 1-.9-1.38c-.16-.42-.36-1.06-.41-2.23C2.2 15.55 2.2 15.17 2.2 12s0-3.55.07-4.81c.05-1.17.25-1.8.41-2.23.22-.56.48-.96.9-1.38.42-.42.82-.68 1.38-.9.42-.16 1.06-.36 2.23-.41C8.41 2.2 8.8 2.2 12 2.2Zm0 1.95c-3.14 0-3.5 0-4.74.07-.9.04-1.38.19-1.7.31-.43.17-.74.37-1.06.69-.32.32-.52.63-.69 1.06-.12.32-.27.8-.31 1.7-.06 1.24-.07 1.6-.07 4.74s0 3.5.07 4.74c.04.9.19 1.38.31 1.7.17.43.37.74.69 1.06.32.32.63.52 1.06.69.32.12.8.27 1.7.31 1.24.06 1.6.07 4.74.07s3.5 0 4.74-.07c.9-.04 1.38-.19 1.7-.31.43-.17.74-.37 1.06-.69.32-.32.52-.63.69-1.06.12-.32.27-.8.31-1.7.06-1.24.07-1.6.07-4.74s0-3.5-.07-4.74c-.04-.9-.19-1.38-.31-1.7a2.85 2.85 0 0 0-.69-1.06 2.85 2.85 0 0 0-1.06-.69c-.32-.12-.8-.27-1.7-.31-1.24-.06-1.6-.07-4.74-.07Zm0 3.32a4.53 4.53 0 1 1 0 9.06 4.53 4.53 0 0 1 0-9.06Zm0 1.95a2.58 2.58 0 1 0 0 5.16 2.58 2.58 0 0 0 0-5.16Zm5.77-2.16a1.06 1.06 0 1 1-2.12 0 1.06 1.06 0 0 1 2.12 0Z"/></svg>}
+              {s.key === 'tiktok' && <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M16.5 3c.4 2.3 1.7 3.7 3.9 3.9v2.6c-1.3.1-2.5-.3-3.9-1.1v5.6c0 4.3-3.1 6.7-6.5 6-2.9-.6-4.4-2.9-4.1-5.6.3-2.8 2.9-4.6 5.8-4.1v2.7c-.4-.1-.9-.2-1.4-.1-1.2.1-2 .9-1.9 2.1.1 1.1 1 1.9 2.2 1.8 1.3-.1 2-1 2-2.4V3h3.4Z"/></svg>}
+              {s.key === 'facebook' && <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M22 12a10 10 0 1 0-11.56 9.88v-6.99H7.9V12h2.54V9.8c0-2.5 1.49-3.89 3.78-3.89 1.09 0 2.24.2 2.24.2v2.46h-1.26c-1.24 0-1.63.77-1.63 1.56V12h2.78l-.44 2.89h-2.34v6.99A10 10 0 0 0 22 12Z"/></svg>}
+              {s.key === 'x' && <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M17.5 3h3.2l-7 8 8.2 10h-6.4l-5-6.1L8.5 21H5.3l7.4-8.5L4.8 3h6.6l4.5 5.6L17.5 3Zm-1.1 16h1.8L8.2 4.9H6.3L16.4 19Z"/></svg>}
+            </a>
+          ))}
+        </div>
+      )}
+    </div>
+  </div>
+</article>
+
+<style>
+  .card {
+    position: relative;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.16s ease, box-shadow 0.16s ease;
+  }
+  .card:hover { transform: translateY(-3px); box-shadow: 0 18px 40px -14px rgba(42,10,36,0.36); }
+
+  /* Stretched link: clicking anywhere on the card (except the buttons/links
+     below, which sit on a higher layer) opens the performer's profile. */
+  .card-link { position: absolute; inset: 0; z-index: 1; }
+  .card-link::after { content: ''; position: absolute; inset: 0; }
+  .thumbs, .card-actions { position: relative; z-index: 2; }
+  .card-link:focus-visible { outline: 3px solid var(--gold); outline-offset: -3px; }
+
+  .gallery-main { position: relative; aspect-ratio: 4 / 5; background: var(--paper-2); }
+
+.no-photo {
+    position: absolute; inset: 0; display: grid; place-items: center;
+    color: var(--ink-soft); font-size: 0.9rem; font-weight: 600;
+    background: var(--paper-2);
+  }
+
+  .shot {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    object-fit: cover;
+    opacity: 0; transition: opacity 0.25s ease;
+  }
+  .shot.is-active { opacity: 1; }
+  .photo-count {
+    position: absolute; bottom: 10px; right: 10px;
+    background: rgba(42,10,36,0.72); color: #fff;
+    font-size: 0.72rem; font-weight: 600;
+    padding: 3px 9px; border-radius: 999px;
+  }
+
+  .thumbs { display: flex; gap: 6px; padding: 8px; background: var(--paper-2); }
+  .thumb {
+    width: 48px; height: 48px; padding: 0;
+    border-radius: 10px; overflow: hidden;
+    border: 2px solid transparent; cursor: pointer; background: none;
+    transition: border-color 0.12s ease;
+  }
+  .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .thumb.is-active { border-color: var(--rose); }
+
+  .card-body { padding: 16px 18px 18px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
+  .meta { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+  .name { font-size: 1.35rem; color: var(--ink); }
+  .city {
+    font-size: 0.78rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--leaf); white-space: nowrap;
+  }
+  .role { margin: 0; color: var(--ink-soft); font-size: 0.96rem; }
+.desc {
+    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .card-actions { margin-top: auto; padding-top: 8px; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+  .reveal-btn {
+    display: inline-flex; align-items: center; gap: 7px;
+    font: inherit; font-weight: 600; font-size: 0.9rem;
+    background: var(--rose); color: #fff;
+    border: none; border-radius: 999px;
+    padding: 9px 16px; cursor: pointer;
+    transition: background 0.14s ease, transform 0.12s ease;
+  }
+  .reveal-btn:hover { background: var(--rose-deep); transform: translateY(-1px); }
+  .reveal-btn.is-revealed { background: var(--leaf); cursor: default; }
+
+  .socials { display: flex; gap: 6px; }
+  .soc {
+    width: 34px; height: 34px; border-radius: 10px;
+    display: grid; place-items: center;
+    background: var(--paper-2); color: var(--ink);
+    text-decoration: none;
+    transition: transform 0.12s ease, background 0.12s ease, color 0.12s ease;
+  }
+  .soc:hover { transform: translateY(-2px); background: var(--rose); color: #fff; }
+
+  :global(.reveal-btn:focus-visible), .thumb:focus-visible, .soc:focus-visible {
+    outline: 3px solid var(--gold); outline-offset: 2px;
+  }
+</style>

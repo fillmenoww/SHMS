@@ -1,0 +1,26 @@
+# ── OPTIONAL: form-based editing via pagescms.org ──
+# After your repo is on GitHub, go to https://pagescms.org, sign in with
+# GitHub, pick this repo, and you get a web form to add performers
+# (no code). This file tells it what fields to show.
+content:
+  - name: performers
+    label: Performers
+    type: collection
+    path: src/content/performers
+    filename: '{fields.name | lower}.md'
+    view:
+      fields: [name, city, role]
+    fields:
+      - { name: name, label: Name, type: string, required: true }
+      - { name: city, label: City, type: string, required: true }
+      - { name: role, label: Role, type: string, required: true }
+      - { name: phone, label: Phone number, type: string, required: true }
+      - { name: images, label: Photos (1-4), type: image, list: { min: 1, max: 4 } }
+      - { name: instagram, label: Instagram URL, type: string }
+      - { name: tiktok, label: TikTok URL, type: string }
+      - { name: facebook, label: Facebook URL, type: string }
+      - { name: x, label: X URL, type: string }
+      - { name: featured, label: Pin to top, type: boolean, default: false }
+media:
+  input: src/content/performers
+  output: .

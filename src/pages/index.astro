@@ -1,0 +1,182 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../layouts/Base.astro';
+import PerformerCard from '../components/PerformerCard.astro';
+import { nameFromId } from '../lib/performerImages';
+
+const performers = await getCollection('performers');
+
+performers.sort((a, b) => {
+  if (a.data.featured !== b.data.featured) return a.data.featured ? -1 : 1;
+  const an = a.data.name ?? nameFromId(a.id);
+  const bn = b.data.name ?? nameFromId(b.id);
+  return an.localeCompare(bn);
+});
+
+const cityCounts = new Map<string, number>();
+for (const p of performers) {
+  cityCounts.set(p.data.city, (cityCounts.get(p.data.city) ?? 0) + 1);
+}
+const cities = [...cityCounts.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+
+const tagCounts = new Map<string, number>();
+for (const p of performers) {
+  for (const t of p.data.tags ?? []) tagCounts.set(t, (tagCounts.get(t) ?? 0) + 1);
+}
+const categories = [...tagCounts.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+---
+<Base title="Shemales of Pakistan">
+  
+
+  <header class="site-header">
+    <div class="wrap">
+      <p class="kicker">Party · Dating · Functions · Cam Shows · Meetups · Fun</p>
+      <h1>Meet your Dream <span class="accent">Shemale</span></h1>
+      <p class="tagline">
+        Shemales, Gays, Top Shemales, Bottom Shemales, Rawalpindi, Islamabad, Karachi, Islamabad, Lahore, Gujranwala, Multan, Faisalabad. Every type of Shemales 100% Original Phone numbers. Verified. Shemales Pakistan Phone Numbers. Ladyboys Pakistan Phone Numbers. Trans in Pakistan. Trans Pakistan Phone Numbers
+      </p>
+    </div>
+  </header>
+  <div class="garland" aria-hidden="true"></div>
+
+  <div class="ad-slot" id="ad-top"></div>
+
+  <div class="filters" id="listings">
+    <nav class="filter-bar" aria-label="Filter by city">
+      <div class="wrap filter-row">
+        <span class="filter-label">City</span>
+        <button class="chip" data-city="all" aria-pressed="true">All <span class="count">{performers.length}</span></button>
+        {cities.map(([city, count]) => (
+          <button class="chip" data-city={city} aria-pressed="false">{city} <span class="count">{count}</span></button>
+        ))}
+      </div>
+    </nav>
+
+   {categories.length > 0 && (
+      <nav class="filter-bar filter-bar--tags" aria-label="Filter by category">
+        <div class="wrap filter-row">
+          <button class="cat-toggle" id="cat-toggle" aria-expanded="false" aria-controls="cat-chips">
+            <span class="filter-label">Category</span>
+            <span class="chev" aria-hidden="true">▾</span>
+          </button>
+          <div class="cat-chips" id="cat-chips" hidden>
+            <button class="tagchip" data-tag="all" aria-pressed="true">All</button>
+            {categories.map(([tag, count]) => (
+              <button class="tagchip" data-tag={tag} aria-pressed="false">
+                {tag} <span class="count">{count}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </nav>
+    )}
+  </div>
+
+  <main class="wrap">
+    <div class="grid" id="grid">
+      {performers.map((entry) => <PerformerCard entry={entry} />)}
+      <p class="empty" id="empty" hidden>No performers match these filters yet.</p>
+    </div>
+  </main>
+
+  <div class="ad-slot ad-slot--inline" id="ad-inline"></div>
+  <div id="contact"></div>
+</Base>
+
+<script>
+  // ── Shuffle the grid on every page load. Featured cards stay
+  //    pinned first, then the rest are shuffled randomly. ──
+  (function shuffleGrid() {
+    const grid = document.getElementById('grid');
+    if (!grid) return;
+    const empty = document.getElementById('empty');
+    const cards = Array.from(grid.querySelectorAll('.card'));
+    const featured = cards.filter((c) => c.dataset.featured === 'true');
+    const rest = cards.filter((c) => c.dataset.featured !== 'true');
+
+    for (let i = rest.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [rest[i], rest[j]] = [rest[j], rest[i]];
+    }
+
+    for (const card of [...featured, ...rest]) {
+      grid.insertBefore(card, empty);
+    }
+  })();
+
+  // ── Combined city + category filter ──
+  const cityChips = document.querySelectorAll('.chip');
+  const tagChips = document.querySelectorAll<HTMLButtonElement>('.tagchip');
+  const cards = document.querySelectorAll<HTMLElement>('.card');
+  const empty = document.getElementById('empty');
+
+  let activeCity = 'all';
+  let activeTag = 'all';
+
+  function applyFilters() {
+    let shown = 0;
+    cards.forEach((card) => {
+      const cityOk = activeCity === 'all' || card.dataset.city === activeCity;
+      const cardTags = (card.dataset.tags ?? '').split('|').filter(Boolean);
+      const tagOk = activeTag === 'all' || cardTags.includes(activeTag);
+      const match = cityOk && tagOk;
+      card.style.display = match ? '' : 'none';
+      if (match) shown++;
+    });
+    if (empty) empty.hidden = shown !== 0;
+  }
+
+  cityChips.forEach((chip) => {
+    chip.addEventListener('click', () => {
+      activeCity = chip.dataset.city ?? 'all';
+      cityChips.forEach((c) => c.setAttribute('aria-pressed', String(c === chip)));
+      applyFilters();
+    });
+  });
+
+  tagChips.forEach((chip) => {
+    chip.addEventListener('click', () => {
+      activeTag = chip.dataset.tag ?? 'all';
+      tagChips.forEach((c) => c.setAttribute('aria-pressed', String(c === chip)));
+      applyFilters();
+    });
+  });
+
+  // ── Category expand / collapse ──
+  const catToggle = document.getElementById('cat-toggle');
+  const catChips = document.getElementById('cat-chips');
+  if (catToggle && catChips) {
+    catToggle.addEventListener('click', () => {
+      const open = catChips.hasAttribute('hidden');
+      if (open) catChips.removeAttribute('hidden');
+      else catChips.setAttribute('hidden', '');
+      catToggle.setAttribute('aria-expanded', String(open));
+    });
+  }
+
+  document.querySelectorAll<HTMLButtonElement>('.reveal-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      if (btn.classList.contains('is-revealed')) return;
+      const phone = btn.dataset.phone ?? '';
+      const label = btn.querySelector('.reveal-label');
+      if (label) label.textContent = phone;
+      btn.classList.add('is-revealed');
+      btn.style.cursor = 'text';
+      btn.addEventListener('click', () => { window.location.href = `tel:${phone.replace(/\s+/g, '')}`; });
+    });
+  });
+
+  document.querySelectorAll<HTMLElement>('.gallery').forEach((gallery) => {
+    const shots = gallery.querySelectorAll<HTMLElement>('.shot');
+    const thumbs = gallery.querySelectorAll<HTMLButtonElement>('.thumb');
+    const counter = gallery.querySelector('.photo-count');
+    thumbs.forEach((thumb) => {
+      thumb.addEventListener('click', () => {
+        const target = Number(thumb.dataset.target);
+        shots.forEach((s, i) => s.classList.toggle('is-active', i === target));
+        thumbs.forEach((t, i) => t.classList.toggle('is-active', i === target));
+        if (counter) counter.textContent = `${target + 1} / ${shots.length}`;
+      });
+    });
+  });
+</script>
