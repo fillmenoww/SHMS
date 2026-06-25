@@ -2,7 +2,9 @@
 import { getCollection, render } from 'astro:content';
 import { Image } from 'astro:assets';
 import Base from '../../layouts/Base.astro';
+import AdSlot from '../../components/AdSlot.astro';
 import { getPerformerImages, nameFromId } from '../../lib/performerImages';
+
 // One page is generated per .md file at build time.
 export async function getStaticPaths() {
   const performers = await getCollection('performers');
@@ -14,8 +16,11 @@ export async function getStaticPaths() {
 
 const { entry } = Astro.props;
 const { city, role, phone, tiktok, facebook, instagram, x, description, tags, featured, keywords } = entry.data;
+
+// Name falls back to the filename; images auto-detected from it too.
 const name = entry.data.name ?? nameFromId(entry.id);
 const images = getPerformerImages(entry.id);
+
 // Render any text written below the frontmatter (optional bio).
 const { Content } = await render(entry);
 
@@ -26,8 +31,15 @@ const socials = [
   { key: 'x', url: x, label: 'X' },
 ].filter((s) => s.url);
 
+// SEO keywords: a sensible baseline built automatically from this
+// performer's own data, plus anything typed manually in `keywords:`
+// in their .md file. Duplicates removed, nothing to maintain by hand
+// unless you want to add extra terms.
 const autoKeywords = [name, city, role, ...tags].filter(Boolean);
 const pageKeywords = [...new Set([...autoKeywords, ...keywords])];
+
+// Alt text: name + role + city instead of just a number, so each
+// photo carries real, descriptive text for search engines.
 const altFor = (i: number) => `${name} — ${role}, ${city} — photo ${i + 1}`;
 ---
 <Base
@@ -43,7 +55,7 @@ const altFor = (i: number) => `${name} — ${role}, ${city} — photo ${i + 1}`;
       <div class="d-gallery">
         <div class="d-main">
           {images.map((img, i) => (
-          <Image
+            <Image
               src={img}
               alt={altFor(i)}
               width={900}
@@ -67,7 +79,7 @@ const altFor = (i: number) => `${name} — ${role}, ${city} — photo ${i + 1}`;
 
       <!-- Info -->
       <div class="d-info">
-     {featured && <span class="featured-badge featured-badge--inline">★ Featured</span>}
+        {featured && <span class="featured-badge featured-badge--inline">★ Featured</span>}
         <span class="d-city">{city}</span>
         <h1 class="d-name">{name}</h1>
         <p class="d-role">{role}</p>
@@ -77,6 +89,8 @@ const altFor = (i: number) => `${name} — ${role}, ${city} — photo ${i + 1}`;
           </ul>
         )}
         {description && <p class="d-desc">{description}</p>}
+
+        <div class="ad-detail-top"><AdSlot variant="banner-300x250" /></div>
 
         <button class="reveal-btn d-reveal" type="button" data-phone={phone}>
           <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M6.6 10.8a15.5 15.5 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.46.57 3.6a1 1 0 0 1-.25 1l-2.2 2.2Z"/></svg>
@@ -93,8 +107,8 @@ const altFor = (i: number) => `${name} — ${role}, ${city} — photo ${i + 1}`;
 
         <div class="d-body"><Content /></div>
 
-        <!-- Adsterra slot on the profile page -->
-        <div class="ad-slot" id="ad-profile"></div>
+        <!-- Native ad below the bio -->
+        <div class="ad-detail-bottom"><AdSlot variant="native" /></div>
       </div>
     </div>
   </div>
@@ -134,8 +148,9 @@ const altFor = (i: number) => `${name} — ${role}, ${city} — photo ${i + 1}`;
   }
   .d-name { font-size: clamp(2rem, 5vw, 3rem); color: var(--ink); margin: 6px 0 10px; }
   .d-role { font-size: 1.15rem; color: var(--ink-soft); margin: 0 0 22px; }
-.d-tags { margin: 0 0 16px; }
+  .d-tags { margin: 0 0 16px; }
   .d-desc { margin: 0 0 22px; font-size: 1.04rem; line-height: 1.6; color: var(--ink); max-width: 46ch; }
+
   .d-reveal { font-size: 1rem; padding: 12px 22px; }
 
   .d-socials { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; }

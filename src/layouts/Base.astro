@@ -28,9 +28,7 @@ const {
       rel="stylesheet"
     />
 
-    <!-- ADSTERRA — paste your Adsterra <script> tag(s) here. Loads on every page. -->
-    <!-- <script type="text/javascript" src="//your-adsterra-code.js"></script> -->
-  </head>
+    </head>
   <body>
     <nav class="topnav">
       <div class="wrap topnav-inner">
@@ -47,5 +45,87 @@ const {
         <p>&copy; {new Date().getFullYear()} — All listings shared with performer consent.</p>
       </div>
     </footer>
+
+    <script>
+      import {
+        ADS_ENABLED,
+        popunderCode,
+        socialBarCode,
+        POPUNDER_FIRST_DELAY_MS,
+        POPUNDER_REPEAT_DELAY_MS,
+        SOCIAL_BAR_DELAY_MS,
+      } from '../data/ads.config';
+
+      if (ADS_ENABLED) {
+        const SESSION_START_KEY = 'adsterra_session_start';
+        const LAST_ARMED_KEY = 'adsterra_last_armed';
+        const SOCIAL_BAR_KEY = 'adsterra_social_bar_loaded';
+        const now = Date.now();
+
+        let sessionStart = Number(sessionStorage.getItem(SESSION_START_KEY));
+        if (!sessionStart) {
+          sessionStart = now;
+          sessionStorage.setItem(SESSION_START_KEY, String(sessionStart));
+        }
+        let lastArmed = Number(sessionStorage.getItem(LAST_ARMED_KEY)) || 0;
+
+        function injectExecutableHTML(html: string, containerId: string) {
+          const old = document.getElementById(containerId);
+          if (old) old.remove();
+          const holder = document.createElement('div');
+          holder.id = containerId;
+          holder.style.display = 'none';
+          document.body.appendChild(holder);
+
+          const temp = document.createElement('div');
+          temp.innerHTML = html;
+          Array.from(temp.childNodes).forEach((node) => {
+            if (node.nodeType === 1 && (node as Element).tagName === 'SCRIPT') {
+              const old = node as HTMLScriptElement;
+              const fresh = document.createElement('script');
+              for (const attr of Array.from(old.attributes)) {
+                fresh.setAttribute(attr.name, attr.value);
+              }
+              fresh.text = old.textContent || '';
+              holder.appendChild(fresh);
+            } else {
+              holder.appendChild(node);
+            }
+          });
+        }
+
+        function schedulePopunder() {
+          if (!popunderCode) return;
+          const wait =
+            lastArmed === 0
+              ? Math.max(POPUNDER_FIRST_DELAY_MS - (now - sessionStart), 0)
+              : Math.max(POPUNDER_REPEAT_DELAY_MS - (now - lastArmed), 0);
+
+          setTimeout(() => {
+            lastArmed = Date.now();
+            sessionStorage.setItem(LAST_ARMED_KEY, String(lastArmed));
+            injectExecutableHTML(popunderCode, 'adsterra-popunder-holder');
+            setInterval(() => {
+              lastArmed = Date.now();
+              sessionStorage.setItem(LAST_ARMED_KEY, String(lastArmed));
+              injectExecutableHTML(popunderCode, 'adsterra-popunder-holder');
+            }, POPUNDER_REPEAT_DELAY_MS);
+          }, wait);
+        }
+
+        function scheduleSocialBar() {
+          if (!socialBarCode) return;
+          if (sessionStorage.getItem(SOCIAL_BAR_KEY)) return;
+          const wait = Math.max(SOCIAL_BAR_DELAY_MS - (now - sessionStart), 0);
+          setTimeout(() => {
+            sessionStorage.setItem(SOCIAL_BAR_KEY, '1');
+            injectExecutableHTML(socialBarCode, 'adsterra-socialbar-holder');
+          }, wait);
+        }
+
+        schedulePopunder();
+        scheduleSocialBar();
+      }
+    </script>
   </body>
 </html>

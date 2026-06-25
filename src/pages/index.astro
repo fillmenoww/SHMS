@@ -2,6 +2,7 @@
 import { getCollection } from 'astro:content';
 import Base from '../layouts/Base.astro';
 import PerformerCard from '../components/PerformerCard.astro';
+import AdSlot from '../components/AdSlot.astro';
 import { nameFromId } from '../lib/performerImages';
 import { siteKeywords } from '../data/seo';
 
@@ -41,7 +42,10 @@ const pageKeywords = [...new Set([...autoKeywords, ...siteKeywords])];
   </header>
   <div class="garland" aria-hidden="true"></div>
 
-  <div class="ad-slot" id="ad-top"></div>
+  <div class="ad-responsive-banner wrap">
+    <div class="ad-desktop-only"><AdSlot variant="banner-728x90" /></div>
+    <div class="ad-mobile-only"><AdSlot variant="banner-320x50" /></div>
+  </div>
 
   <div class="filters" id="listings">
     <nav class="filter-bar" aria-label="Filter by city">
@@ -75,23 +79,26 @@ const pageKeywords = [...new Set([...autoKeywords, ...siteKeywords])];
   </div>
 
   <main class="wrap">
-    <div class="grid" id="grid">
+   <div class="grid" id="grid">
       {performers.map((entry) => <PerformerCard entry={entry} />)}
+      <div class="ad-grid-item"><AdSlot variant="native" /></div>
+      <div class="ad-grid-item"><AdSlot variant="banner-300x250" /></div>
+      <div class="ad-grid-item"><AdSlot variant="banner-300x250" /></div>
       <p class="empty" id="empty" hidden>No performers match these filters yet.</p>
     </div>
   </main>
-
-  <div class="ad-slot ad-slot--inline" id="ad-inline"></div>
+<div class="ad-bottom wrap"><AdSlot variant="banner-300x250" /></div>
   <div id="contact"></div>
 </Base>
 
 <script>
   // ── Shuffle the grid on every page load. Featured cards stay
   //    pinned first, then the rest are shuffled randomly. ──
-  (function shuffleGrid() {
+ (function shuffleGrid() {
     const grid = document.getElementById('grid');
     if (!grid) return;
     const empty = document.getElementById('empty');
+    const adNodes = Array.from(grid.querySelectorAll('.ad-grid-item'));
     const cards = Array.from(grid.querySelectorAll('.card'));
     const featured = cards.filter((c) => c.dataset.featured === 'true');
     const rest = cards.filter((c) => c.dataset.featured !== 'true');
@@ -101,8 +108,17 @@ const pageKeywords = [...new Set([...autoKeywords, ...siteKeywords])];
       [rest[i], rest[j]] = [rest[j], rest[i]];
     }
 
-    for (const card of [...featured, ...rest]) {
+    const ordered = [...featured, ...rest];
+    let adIndex = 0;
+    ordered.forEach((card, i) => {
       grid.insertBefore(card, empty);
+      if ((i + 1) % 6 === 0 && adIndex < adNodes.length) {
+        grid.insertBefore(adNodes[adIndex], empty);
+        adIndex++;
+      }
+    });
+    for (; adIndex < adNodes.length; adIndex++) {
+      grid.insertBefore(adNodes[adIndex], empty);
     }
   })();
 

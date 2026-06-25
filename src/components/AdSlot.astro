@@ -1,0 +1,67 @@
+---
+// ─────────────────────────────────────────────────────────────
+//  Drop <AdSlot variant="..." /> anywhere an ad should appear.
+//  The actual ad code is NOT here — it lives in src/data/ads.config.ts.
+//  This file is structural only; you shouldn't need to edit it
+//  when ad codes change, only when you want to change WHERE ads
+//  show up on a page.
+// ─────────────────────────────────────────────────────────────
+import { ADS_ENABLED, adCodes } from '../data/ads.config';
+
+interface Props {
+  variant:
+    | 'banner-468x60'
+    | 'banner-160x300'
+    | 'banner-320x50'
+    | 'banner-728x90'
+    | 'banner-160x600'
+    | 'banner-300x250'
+    | 'native';
+}
+const { variant } = Astro.props;
+const code = ADS_ENABLED ? adCodes[variant] : '';
+
+const dims: Record<string, { w: number; h: number }> = {
+  'banner-468x60': { w: 468, h: 60 },
+  'banner-160x300': { w: 160, h: 300 },
+  'banner-320x50': { w: 320, h: 50 },
+  'banner-728x90': { w: 728, h: 90 },
+  'banner-160x600': { w: 160, h: 600 },
+  'banner-300x250': { w: 300, h: 250 },
+};
+const d = dims[variant];
+
+// In dev mode only, show a dashed placeholder for slots that don't
+// have a code yet, so you can see where they'll appear. In the real
+// production build, an empty slot renders nothing at all — clean,
+// like a WordPress widget area with nothing dropped into it yet.
+const showPlaceholder = import.meta.env.DEV && !code;
+---
+{(code || showPlaceholder) && (
+  <div class="ad-unit" data-ad-variant={variant} style={d ? `max-width:${d.w}px` : undefined}>
+    <span class="ad-unit-label">Advertisement{showPlaceholder && ' (no code yet)'}</span>
+    {code ? (
+      <div class="ad-unit-body" style={d ? `aspect-ratio:${d.w}/${d.h}` : undefined} set:html={code} />
+    ) : (
+      <div class={variant === 'native' ? 'ad-unit-body ad-unit-body--native' : 'ad-unit-body'} style={d ? `aspect-ratio:${d.w}/${d.h}` : undefined} />
+    )}
+  </div>
+)}
+
+<style>
+  .ad-unit { margin: 0 auto; }
+  .ad-unit-label {
+    display: block; text-align: center;
+    font-size: 0.65rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--ink-soft); opacity: 0.6; margin-bottom: 4px;
+  }
+  .ad-unit-body {
+    background: var(--paper-2);
+    border: 1px dashed var(--line);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+    width: 100%;
+  }
+  .ad-unit-body--native { min-height: 120px; aspect-ratio: auto; }
+</style>
