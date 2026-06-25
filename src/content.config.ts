@@ -16,6 +16,9 @@ const performers = defineCollection({
       description: z.string().optional(),
       tags: z.array(z.string()).optional().default([]),
       phone: z.string(), // shown only after the reveal button is clicked
+      // SEO: comma-free list of search keywords for THIS performer's page.
+      // Shown to search engines only — never visible on the page itself.
+      keywords: z.array(z.string()).optional().default([]),
       // All socials optional — just delete the lines you don't need
       tiktok: z.string().url().optional(),
       facebook: z.string().url().optional(),

@@ -13,7 +13,7 @@ export async function getStaticPaths() {
 }
 
 const { entry } = Astro.props;
-const { city, role, phone, tiktok, facebook, instagram, x, description, tags, featured } = entry.data;
+const { city, role, phone, tiktok, facebook, instagram, x, description, tags, featured, keywords } = entry.data;
 const name = entry.data.name ?? nameFromId(entry.id);
 const images = getPerformerImages(entry.id);
 // Render any text written below the frontmatter (optional bio).
@@ -25,8 +25,16 @@ const socials = [
   { key: 'facebook', url: facebook, label: 'Facebook' },
   { key: 'x', url: x, label: 'X' },
 ].filter((s) => s.url);
+
+const autoKeywords = [name, city, role, ...tags].filter(Boolean);
+const pageKeywords = [...new Set([...autoKeywords, ...keywords])];
+const altFor = (i: number) => `${name} — ${role}, ${city} — photo ${i + 1}`;
 ---
-<Base title={`${name} — ${city}`} description={`${name}, ${role}. Available in ${city}.`}>
+<Base
+  title={`${name} — ${city}`}
+  description={`${name}, ${role}. Available in ${city}.`}
+  keywords={pageKeywords}
+>
   <div class="wrap detail">
     <a class="back" href="/">&larr; All performers</a>
 
@@ -35,9 +43,9 @@ const socials = [
       <div class="d-gallery">
         <div class="d-main">
           {images.map((img, i) => (
-            <Image
+          <Image
               src={img}
-              alt={`${name} — photo ${i + 1}`}
+              alt={altFor(i)}
               width={900}
               height={1125}
               class={i === 0 ? 'd-shot is-active' : 'd-shot'}
@@ -59,8 +67,7 @@ const socials = [
 
       <!-- Info -->
       <div class="d-info">
-       {featured && <span class="featured-badge featured-badge--inline">★ Featured</span>}
-        <span class="d-city">{city}</span>
+     {featured && <span class="featured-badge featured-badge--inline">★ Featured</span>}
         <span class="d-city">{city}</span>
         <h1 class="d-name">{name}</h1>
         <p class="d-role">{role}</p>

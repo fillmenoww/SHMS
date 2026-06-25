@@ -24,10 +24,10 @@ const socials = [
       {images.length === 0 && (
         <div class="no-photo">No photo yet</div>
       )}
-      {images.map((img, i) => (
+   {images.map((img, i) => (
         <Image
           src={img}
-          alt={`${name} — photo ${i + 1}`}
+          alt={`${name} — ${role}, ${city} — photo ${i + 1}`}
           width={520}
           height={650}
           class={i === 0 ? 'shot is-active' : 'shot'}
@@ -61,9 +61,6 @@ const socials = [
       <h3 class="name">{name}</h3>
       <span class="city">{city}</span>
     </div>
-    <p class="role">{role}</p>
-
-
 <p class="role">{role}</p>
     {description && <p class="desc">{description}</p>}
     {tags.length > 0 && (

@@ -3,6 +3,7 @@ import { getCollection } from 'astro:content';
 import Base from '../layouts/Base.astro';
 import PerformerCard from '../components/PerformerCard.astro';
 import { nameFromId } from '../lib/performerImages';
+import { siteKeywords } from '../data/seo';
 
 const performers = await getCollection('performers');
 
@@ -24,10 +25,11 @@ for (const p of performers) {
   for (const t of p.data.tags ?? []) tagCounts.set(t, (tagCounts.get(t) ?? 0) + 1);
 }
 const categories = [...tagCounts.entries()].sort((a, b) => a[0].localeCompare(b[0]));
----
-<Base title="Shemales of Pakistan">
-  
 
+const autoKeywords = [...cities.map(([c]) => c), ...categories.map(([t]) => t)];
+const pageKeywords = [...new Set([...autoKeywords, ...siteKeywords])];
+---
+<Base title="Shemales of Pakistan" keywords={pageKeywords}>
   <header class="site-header">
     <div class="wrap">
       <p class="kicker">Party · Dating · Functions · Cam Shows · Meetups · Fun</p>
