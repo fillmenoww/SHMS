@@ -11,11 +11,11 @@ const performers = defineCollection({
   schema: ({ image }) =>
     z.object({
       name: z.string().optional(), // optional — falls back to the filename
-      city: z.string(),
-      role: z.string(), // free text, type anything
+      city: z.string().optional(),
+      role: z.string().optional(), // free text, type anything
       description: z.string().optional(),
       tags: z.array(z.string()).optional().default([]),
-      phone: z.string(), // shown only after the reveal button is clicked
+      phone: z.string().optional(), // shown only after the reveal button is clicked
       // SEO: comma-free list of search keywords for THIS performer's page.
       // Shown to search engines only — never visible on the page itself.
       keywords: z.array(z.string()).optional().default([]),

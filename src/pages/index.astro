@@ -15,12 +15,17 @@ performers.sort((a, b) => {
   return an.localeCompare(bn);
 });
 
+// City chips. New text-only cards have no city, so skip them —
+// otherwise a blank "undefined" chip shows up in the filter bar.
 const cityCounts = new Map<string, number>();
 for (const p of performers) {
+  if (!p.data.city) continue;
   cityCounts.set(p.data.city, (cityCounts.get(p.data.city) ?? 0) + 1);
 }
 const cities = [...cityCounts.entries()].sort((a, b) => a[0].localeCompare(b[0]));
 
+// Category chips. tags is always an array (schema default []), so the
+// new cards' auto-tags slot in here with no extra handling needed.
 const tagCounts = new Map<string, number>();
 for (const p of performers) {
   for (const t of p.data.tags ?? []) tagCounts.set(t, (tagCounts.get(t) ?? 0) + 1);
