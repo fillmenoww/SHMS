@@ -5,9 +5,21 @@ import { getPerformerImages, nameFromId } from '../lib/performerImages';
 
 interface Props { entry: CollectionEntry<'performers'>; }
 const { entry } = Astro.props;
-const { city, role, phone, tiktok, facebook, instagram, x, description, tags, featured } = entry.data;
+const { city, role, phone, tiktok, facebook, instagram, x, description, tags, featured, keywords } = entry.data;
 const name = entry.data.name ?? nameFromId(entry.id);
 const images = getPerformerImages(entry.id);
+
+// One lowercase blob of every searchable field, read by the index
+// page's search box (matches across name, city, role, description,
+// tags and keywords all at once).
+const searchBlob = [
+  name,
+  city,
+  role,
+  description,
+  ...(tags ?? []),
+  ...(keywords ?? []),
+].filter(Boolean).join(' ').toLowerCase();
 
 const socials = [
   { key: 'instagram', url: instagram, label: 'Instagram' },
@@ -16,7 +28,7 @@ const socials = [
   { key: 'x', url: x, label: 'X' },
 ].filter((s) => s.url);
 ---
-<article class="card" data-city={city} data-tags={tags.join('|')} data-featured={featured ? 'true' : 'false'}>
+<article class="card" data-city={city} data-tags={tags.join('|')} data-featured={featured ? 'true' : 'false'} data-search={searchBlob}>
   <a class="card-link" href={`/performer/${entry.id}`} aria-label={`View ${name}'s full profile`}></a>
   <div class="gallery" data-count={images.length}>
     <div class="gallery-main">

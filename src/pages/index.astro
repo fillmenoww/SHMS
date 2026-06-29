@@ -52,6 +52,14 @@ const pageKeywords = [...new Set([...autoKeywords, ...siteKeywords])];
     <div class="ad-mobile-only"><AdSlot variant="banner-320x50" /></div>
   </div>
 
+<div class="search-wrap wrap">
+  <input type="search" id="search" class="search-input"
+         placeholder="Search by name, city, role, keyword…"
+         autocomplete="off" aria-label="Search performers" />
+</div>
+
+
+
   <div class="filters" id="listings">
     <nav class="filter-bar" aria-label="Filter by city">
       <div class="wrap filter-row">
@@ -92,17 +100,37 @@ const pageKeywords = [...new Set([...autoKeywords, ...siteKeywords])];
       <p class="empty" id="empty" hidden>No performers match these filters yet.</p>
     </div>
   </main>
+
+<nav class="pager wrap" id="pager" aria-label="Pagination" hidden>
+  <button class="pager-btn" id="prev" type="button">← Prev</button>
+  <span class="pager-status" id="pager-status"></span>
+  <button class="pager-btn" id="next" type="button">Next →</button>
+</nav>
+
+
+
 <div class="ad-bottom wrap"><AdSlot variant="banner-300x250" /></div>
   <div id="contact"></div>
 </Base>
 
 <script>
+  // ─────────────────────────────────────────────────────────────
+  //  CONFIG
+  // ─────────────────────────────────────────────────────────────
+  const PER_PAGE = 12;
+
+  const grid = document.getElementById('grid');
+  const empty = document.getElementById('empty');
+  const pager = document.getElementById('pager');
+  const pagerStatus = document.getElementById('pager-status');
+  const prevBtn = document.getElementById('prev');
+  const nextBtn = document.getElementById('next');
+  const searchInput = document.getElementById('search');
+
   // ── Shuffle the grid on every page load. Featured cards stay
   //    pinned first, then the rest are shuffled randomly. ──
- (function shuffleGrid() {
-    const grid = document.getElementById('grid');
+  (function shuffleGrid() {
     if (!grid) return;
-    const empty = document.getElementById('empty');
     const adNodes = Array.from(grid.querySelectorAll('.ad-grid-item'));
     const cards = Array.from(grid.querySelectorAll('.card'));
     const featured = cards.filter((c) => c.dataset.featured === 'true');
@@ -127,33 +155,77 @@ const pageKeywords = [...new Set([...autoKeywords, ...siteKeywords])];
     }
   })();
 
-  // ── Combined city + category filter ──
+  // ─────────────────────────────────────────────────────────────
+  //  FILTER + SEARCH + PAGINATION  (one unified pass)
+  // ─────────────────────────────────────────────────────────────
   const cityChips = document.querySelectorAll('.chip');
-  const tagChips = document.querySelectorAll<HTMLButtonElement>('.tagchip');
-  const cards = document.querySelectorAll<HTMLElement>('.card');
-  const empty = document.getElementById('empty');
+  const tagChips = document.querySelectorAll('.tagchip');
+  const cards = Array.from(document.querySelectorAll('.card'));
+  const adItems = Array.from(document.querySelectorAll('.ad-grid-item'));
 
   let activeCity = 'all';
   let activeTag = 'all';
+  let query = '';
+  let currentPage = 1;
 
-  function applyFilters() {
-    let shown = 0;
+  // A card "passes" if it matches city + tag + search query.
+  function passes(card) {
+    const cityOk = activeCity === 'all' || card.dataset.city === activeCity;
+    const cardTags = (card.dataset.tags ?? '').split('|').filter(Boolean);
+    const tagOk = activeTag === 'all' || cardTags.includes(activeTag);
+    const searchOk = query === '' || (card.dataset.search ?? '').includes(query);
+    return cityOk && tagOk && searchOk;
+  }
+
+  function render() {
+    // 1. Which cards match the active filters + search?
+    const matched = cards.filter(passes);
+
+    // 2. Paginate the matched set.
+    const totalPages = Math.max(1, Math.ceil(matched.length / PER_PAGE));
+    if (currentPage > totalPages) currentPage = totalPages;
+    const start = (currentPage - 1) * PER_PAGE;
+    const pageCards = matched.slice(start, start + PER_PAGE);
+    const pageSet = new Set(pageCards);
+
+    // 3. Show only this page's cards; hide everything else.
     cards.forEach((card) => {
-      const cityOk = activeCity === 'all' || card.dataset.city === activeCity;
-      const cardTags = (card.dataset.tags ?? '').split('|').filter(Boolean);
-      const tagOk = activeTag === 'all' || cardTags.includes(activeTag);
-      const match = cityOk && tagOk;
-      card.style.display = match ? '' : 'none';
-      if (match) shown++;
+      card.style.display = pageSet.has(card) ? '' : 'none';
     });
-    if (empty) empty.hidden = shown !== 0;
+
+    // 4. Ads: show them only when we're browsing the unfiltered,
+    //    first page (so they don't break up filtered/search views).
+    const pristine = activeCity === 'all' && activeTag === 'all' && query === '';
+    adItems.forEach((ad) => {
+      ad.style.display = pristine && currentPage === 1 ? '' : 'none';
+    });
+
+    // 5. Empty state.
+    if (empty) empty.hidden = matched.length !== 0;
+
+    // 6. Pager UI.
+    if (pager) {
+      const needsPager = matched.length > PER_PAGE;
+      pager.hidden = !needsPager;
+      if (needsPager && pagerStatus) {
+        pagerStatus.textContent = `Page ${currentPage} of ${totalPages} · ${matched.length} results`;
+      }
+      if (prevBtn) prevBtn.disabled = currentPage <= 1;
+      if (nextBtn) nextBtn.disabled = currentPage >= totalPages;
+    }
+  }
+
+  // Any filter/search change resets to page 1.
+  function resetAndRender() {
+    currentPage = 1;
+    render();
   }
 
   cityChips.forEach((chip) => {
     chip.addEventListener('click', () => {
       activeCity = chip.dataset.city ?? 'all';
       cityChips.forEach((c) => c.setAttribute('aria-pressed', String(c === chip)));
-      applyFilters();
+      resetAndRender();
     });
   });
 
@@ -161,9 +233,34 @@ const pageKeywords = [...new Set([...autoKeywords, ...siteKeywords])];
     chip.addEventListener('click', () => {
       activeTag = chip.dataset.tag ?? 'all';
       tagChips.forEach((c) => c.setAttribute('aria-pressed', String(c === chip)));
-      applyFilters();
+      resetAndRender();
     });
   });
+
+  if (searchInput) {
+    let debounce;
+    searchInput.addEventListener('input', () => {
+      clearTimeout(debounce);
+      debounce = setTimeout(() => {
+        query = searchInput.value.trim().toLowerCase();
+        resetAndRender();
+      }, 120);
+    });
+  }
+
+  if (prevBtn) {
+    prevBtn.addEventListener('click', () => {
+      if (currentPage > 1) { currentPage--; render(); window.scrollTo({ top: document.getElementById('listings')?.offsetTop ?? 0, behavior: 'smooth' }); }
+    });
+  }
+  if (nextBtn) {
+    nextBtn.addEventListener('click', () => {
+      currentPage++; render(); window.scrollTo({ top: document.getElementById('listings')?.offsetTop ?? 0, behavior: 'smooth' });
+    });
+  }
+
+  // First paint.
+  render();
 
   // ── Category expand / collapse ──
   const catToggle = document.getElementById('cat-toggle');
@@ -177,7 +274,8 @@ const pageKeywords = [...new Set([...autoKeywords, ...siteKeywords])];
     });
   }
 
-  document.querySelectorAll<HTMLButtonElement>('.reveal-btn').forEach((btn) => {
+  // ── Phone reveal ──
+  document.querySelectorAll('.reveal-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
       if (btn.classList.contains('is-revealed')) return;
       const phone = btn.dataset.phone ?? '';
@@ -189,9 +287,10 @@ const pageKeywords = [...new Set([...autoKeywords, ...siteKeywords])];
     });
   });
 
-  document.querySelectorAll<HTMLElement>('.gallery').forEach((gallery) => {
-    const shots = gallery.querySelectorAll<HTMLElement>('.shot');
-    const thumbs = gallery.querySelectorAll<HTMLButtonElement>('.thumb');
+  // ── Card gallery thumb swap ──
+  document.querySelectorAll('.gallery').forEach((gallery) => {
+    const shots = gallery.querySelectorAll('.shot');
+    const thumbs = gallery.querySelectorAll('.thumb');
     const counter = gallery.querySelector('.photo-count');
     thumbs.forEach((thumb) => {
       thumb.addEventListener('click', () => {

@@ -739,3 +739,26 @@ a { color: inherit; }
 
 /* ── Profiles page ad placements ── */
 .ad-mid-section { margin: 30px auto; display: flex; justify-content: center; }
+
+
+.search-wrap { margin: 18px auto 4px; }
+.search-input {
+  width: 100%; padding: 14px 18px; font-size: 1rem;
+  border: 2px solid var(--paper-2); border-radius: 999px;
+  background: var(--paper); color: var(--ink); outline: none;
+  transition: border-color 0.15s ease;
+}
+.search-input:focus { border-color: var(--rose); }
+.search-input::placeholder { color: var(--ink-soft); }
+
+.pager {
+  display: flex; align-items: center; justify-content: center;
+  gap: 16px; margin: 30px auto 10px;
+}
+.pager-btn {
+  padding: 10px 20px; border-radius: 999px; border: none;
+  background: var(--rose); color: #fff; font-weight: 600;
+  cursor: pointer; font-size: 0.95rem;
+}
+.pager-btn:disabled { opacity: 0.4; cursor: default; }
+.pager-status { font-size: 0.9rem; color: var(--ink-soft); }
